@@ -712,8 +712,7 @@ if (isset($_GET[&#039;id&#039;])) {
 
 ?&gt;
 </td></tr>
-<tr><td>article.php</td><td>
-&lt;?php
+<tr><td>article.php</td><td>&lt;?php
 
 require_once &#039;../config/config.php&#039;;
 require_once &#039;../includes/functions.php&#039;;
@@ -736,7 +735,28 @@ if (isset($_GET[&#039;id&#039;])) {
         //return $comment[&#039;article_id&#039;] == $current_article[&#039;id&#039;];
    // });
 } else {
-    echo &quot;No article ID provided.&quot;;
+    // If no article ID is provided, display list of all articles
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+    ?&gt;
+
+    &lt;!DOCTYPE html&gt;
+    &lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;List of Articles&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;h1&gt;List of Articles&lt;/h1&gt;
+        &lt;ul&gt;
+            &lt;?php foreach ($articles as $article): ?&gt;
+                &lt;?php if ($article[&#039;status&#039;] === &#039;published&#039;): ?&gt;
+                &lt;li&gt;&lt;a href=&quot;?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&lt;/a&gt;&lt;/li&gt;
+                &lt;?php endif; ?&gt;
+            &lt;?php endforeach; ?&gt;
+        &lt;/ul&gt;
+    &lt;/body&gt;
+    &lt;/html&gt;
+    
+    &lt;?php
     exit();
 }
 ?&gt;
@@ -790,23 +810,17 @@ include &#039;../templates/header.php&#039;;
 $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
 ?&gt;
 
-&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;head&gt;
-    &lt;title&gt;Home&lt;/title&gt;
-    &lt;!-- Mettez ici les balises meta, les liens de styles ou autres éléments d&#039;en-tête communs à toutes vos pages --&gt;
-&lt;/head&gt;
-&lt;body&gt;
-    &lt;?php if (isset($_SESSION[&#039;user&#039;])): ?&gt;
-    &lt;h1&gt;Welcome, &lt;?php echo htmlspecialchars($_SESSION[&#039;user&#039;][&#039;username&#039;]); ?&gt;!&lt;/h1&gt;
-    &lt;?php if ($_SESSION[&#039;user&#039;][&#039;role&#039;] === &#039;admin&#039;): ?&gt;
-    &lt;a href=&#039;admin/index.php&#039;&gt;Admin Panel&lt;/a&gt;
+    &lt;h2&gt;Navigation Articles&lt;/h2&gt;
+    &lt;nav class=&quot;article&quot;&gt;
+    &lt;?php foreach ($articles as $article): ?&gt;
+    &lt;?php if ($article[&#039;status&#039;] === &#039;published&#039;): ?&gt;
+    
+    &lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&lt;/a&gt;
+
     &lt;?php endif; ?&gt;
-    &lt;a href=&#039;propose_article.php&#039;&gt;Propose an Article&lt;/a&gt;
-    &lt;?php else: ?&gt;
-    &lt;h1&gt;Welcome to our CMS!&lt;/h1&gt;
-    &lt;a href=&#039;login.php&#039;&gt;Login&lt;/a&gt; | &lt;a href=&#039;register.php&#039;&gt;Register&lt;/a&gt;
-    &lt;?php endif; ?&gt;
+    &lt;?php endforeach; ?&gt;
+    &lt;a href=&quot;article.php&quot;&gt; Voir tout les Articles &lt;/a&gt;
+    &lt;/nav&gt;
 
     &lt;h2&gt;Recent Articles&lt;/h2&gt;
     &lt;?php foreach ($articles as $article): ?&gt;
@@ -1047,15 +1061,22 @@ if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039; &amp;&amp; isset($_
 &lt;/head&gt;
 &lt;body&gt;
     &lt;header&gt;
-        &lt;h1&gt;Welcome to our CMS&lt;/h1&gt;
+        &lt;h1&gt;&lt;?php echo htmlspecialchars($title); ?&gt;&lt;/h1&gt;
         &lt;nav&gt;
             &lt;a href=&quot;index.php&quot;&gt;Home&lt;/a&gt;
-            &lt;a href=&quot;login.php&quot;&gt;Login&lt;/a&gt;
-            &lt;a href=&quot;register.php&quot;&gt;Register&lt;/a&gt;
+     &lt;?php if (isset($_SESSION[&#039;user&#039;])): ?&gt;
             &lt;a href=&quot;profile.php&quot;&gt;Profile&lt;/a&gt;
+            &lt;a href=&#039;propose_article.php&#039;&gt;Propose an Article&lt;/a&gt;
             &lt;a href=&quot;logout.php&quot;&gt;Logout&lt;/a&gt;
+    &lt;?php if ($_SESSION[&#039;user&#039;][&#039;role&#039;] === &#039;admin&#039;): ?&gt;
+            &lt;a href=&#039;admin/index.php&#039;&gt;Admin Panel&lt;/a&gt;
+    &lt;?php endif; ?&gt;
+            
+    &lt;?php else: ?&gt;
+            &lt;a href=&#039;login.php&#039;&gt;Login&lt;/a&gt; | &lt;a href=&#039;register.php&#039;&gt;Register&lt;/a&gt;
+    &lt;?php endif; ?&gt;
         &lt;/nav&gt;
     &lt;/header&gt;
     &lt;main&gt;
-</td></tr>
+ &lt;!--&lt;h1&gt;Welcome, &lt;?php //echo htmlspecialchars($_SESSION[&#039;user&#039;][&#039;username&#039;]); ?&gt;!&lt;/h1&gt;--&gt;</td></tr>
 </table>
