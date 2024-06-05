@@ -1,0 +1,1061 @@
+<pre>├── config/
+│   ├── config.php
+├── data/
+│   ├── articles.json
+│   ├── users.json
+├── includes/
+│   ├── functions.php
+├── index.php
+├── install.php
+├── public/
+│   ├── admin/
+│   │   ├── ban_user.php
+│   │   ├── create_article.php
+│   │   ├── delete_article.php
+│   │   ├── delete_user.php
+│   │   ├── edit_article.php
+│   │   ├── edit_user.php
+│   │   ├── index.php
+│   │   ├── validate_article.php
+│   ├── article.php
+│   ├── index.php
+│   ├── login.php
+│   ├── logout.php
+│   ├── propose_article.php
+│   ├── register.php
+│   ├── upload_avatar.php
+├── templates/
+│   ├── footer.php
+│   ├── header.php
+</pre>
+<style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+<table>
+<tr><th>Nom du fichier</th><th>Contenu du fichier</th></tr>
+<tr><td>config.php</td><td>&lt;?php
+define(&#039;DATA_DIR&#039;, __DIR__ . &#039;/../data&#039;);
+define(&#039;USERS_FILE&#039;, DATA_DIR . &#039;/users.json&#039;);
+define(&#039;ARTICLES_FILE&#039;, DATA_DIR . &#039;/articles.json&#039;);
+
+session_start([
+    &#039;cookie_lifetime&#039; =&gt; 86400,
+    &#039;cookie_secure&#039; =&gt; true,
+    &#039;cookie_httponly&#039; =&gt; true,
+    &#039;use_strict_mode&#039; =&gt; true,
+    &#039;use_only_cookies&#039; =&gt; true,
+    &#039;sid_length&#039; =&gt; 48,
+]);
+?&gt;</td></tr>
+<tr><td>articles.json</td><td>[{&quot;id&quot;:1,&quot;title&quot;:&quot;test&quot;,&quot;description&quot;:&quot;blabla&quot;,&quot;content&quot;:&quot;test de contenu&quot;,&quot;author_id&quot;:null,&quot;status&quot;:&quot;published&quot;,&quot;date_published&quot;:&quot;2024-06-04 17:37:42&quot;},{&quot;id&quot;:2,&quot;title&quot;:&quot;Premier article!&quot;,&quot;description&quot;:&quot;ceci est le premier article du syst\u00e8me.&quot;,&quot;content&quot;:&quot;voici le premier article du syst\u00e8me que je vais essayer de pr\u00e9server jusqu&amp;#039;\u00e0 la fin du d\u00e9veloppement , comme une relique du pass\u00e9 !&quot;,&quot;author_id&quot;:null,&quot;status&quot;:&quot;published&quot;,&quot;date_published&quot;:&quot;2024-06-04 17:50:29&quot;},{&quot;id&quot;:3,&quot;title&quot;:&quot;2 article&quot;,&quot;description&quot;:&quot;test&quot;,&quot;content&quot;:&quot;pour tester si il est bien publi\u00e9 directement&quot;,&quot;author_id&quot;:null,&quot;status&quot;:&quot;published&quot;,&quot;date_published&quot;:&quot;2024-06-04 17:57:23&quot;},{&quot;id&quot;:4,&quot;title&quot;:&quot;test de proposition&quot;,&quot;description&quot;:&quot;ceci est le descriptif&quot;,&quot;content&quot;:&quot;le contenu de ce test pour voir si il est bien mis en validation, puis ensuite valid\u00e9 et affich\u00e9&quot;,&quot;author_id&quot;:null,&quot;status&quot;:&quot;published&quot;,&quot;date_published&quot;:&quot;2024-06-04 17:58:12&quot;},{&quot;id&quot;:6,&quot;title&quot;:&quot;propo&quot;,&quot;description&quot;:&quot;propositioncontent&quot;,&quot;content&quot;:&quot;content&quot;,&quot;author_id&quot;:null,&quot;status&quot;:&quot;published&quot;,&quot;date_published&quot;:&quot;2024-06-04 18:01:55&quot;},{&quot;id&quot;:7,&quot;title&quot;:&quot;seconde propo&quot;,&quot;description&quot;:&quot;la seconde&quot;,&quot;content&quot;:&quot;est ce la bonne?&quot;,&quot;author_id&quot;:null,&quot;status&quot;:&quot;published&quot;,&quot;date_published&quot;:&quot;2024-06-04 18:05:16&quot;}]</td></tr>
+<tr><td>users.json</td><td>[{&quot;id&quot;:1,&quot;id_uniq&quot;:&quot;e833549270c6fec9f88f41c0e1582105&quot;,&quot;username&quot;:&quot;max&quot;,&quot;email&quot;:&quot;joueur2@exemple.com&quot;,&quot;password&quot;:&quot;$2y$10$Ui0p6LJALs3byQYpYG505eHIwHjGr0w8TOv1lc5KBLRtsn2MYwMVC&quot;,&quot;ip&quot;:&quot;::1&quot;,&quot;role&quot;:&quot;admin&quot;}]</td></tr>
+<tr><td>functions.php</td><td>&lt;?php
+require_once ( __DIR__ . &#039;/../config/config.php&#039;);
+
+/*function get_user($id) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as $user) {
+        if ($user[&#039;id&#039;] == $id) {
+            return $user;
+        }
+    }
+    return null;
+}
+
+function update_user_admin($id, $username, $email, $role) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as &amp;$user) {
+        if ($user[&#039;id&#039;] == $id) {
+            $user[&#039;username&#039;] = $username;
+            $user[&#039;email&#039;] = $email;
+            $user[&#039;role&#039;] = $role;
+            file_put_contents(USERS_FILE, json_encode($users));
+            return true;
+        }
+    }
+    return false;
+}
+
+function delete_user($id) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as $key =&gt; $user) {
+        if ($user[&#039;id&#039;] == $id) {
+            unset($users[$key]);
+            file_put_contents(USERS_FILE, json_encode(array_values($users)));
+            return true;
+        }
+    }
+    return false;
+}
+
+function validate_input($data) {
+    return htmlspecialchars(trim($data), ENT_QUOTES, &#039;UTF-8&#039;);
+}
+
+function validate_email($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
+}
+*/
+function create_article($title, $description, $content, $author_id, $status = &#039;toValidate&#039;) {
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+    $id = empty($articles) ? 1 : end($articles)[&#039;id&#039;] + 1;
+    $date_published = date(&#039;Y-m-d H:i:s&#039;); // Formatte la date et l&#039;heure actuelle
+
+    $new_article = [
+        &#039;id&#039; =&gt; $id,
+        &#039;title&#039; =&gt; $title,
+        &#039;description&#039; =&gt; $description,
+        &#039;content&#039; =&gt; $content,
+        &#039;author_id&#039; =&gt; $username,
+        &#039;status&#039; =&gt; $status,
+        &#039;date_published&#039; =&gt; $date_published
+    ];
+
+    $articles[] = $new_article;
+    file_put_contents(ARTICLES_FILE, json_encode($articles));
+    return true;
+}
+
+
+function get_article($id) {
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+    foreach ($articles as $article) {
+        if ($article[&#039;id&#039;] == $id) {
+            return $article;
+        }
+    }
+    return null;
+}
+
+function update_article($id, $title, $content, $status = &#039;pending&#039;) {
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+    foreach ($articles as &amp;$article) {
+        if ($article[&#039;id&#039;] == $id) {
+            $article[&#039;title&#039;] = $title;
+            $article[&#039;content&#039;] = $content;
+            $article[&#039;status&#039;] = $status;
+            file_put_contents(ARTICLES_FILE, json_encode($articles));
+            return true;
+        }
+    }
+    return false;
+}
+
+function delete_article($id) {
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+    foreach ($articles as $key =&gt; $article) {
+        if ($article[&#039;id&#039;] == $id) {
+            unset($articles[$key]);
+            file_put_contents(ARTICLES_FILE, json_encode(array_values($articles)));
+            return true;
+        }
+    }
+    return false;
+}
+
+function get_user($id) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as $user) {
+        if ($user[&#039;id&#039;] == $id) {
+            return $user;
+        }
+    }
+    return null;
+}
+
+function update_user_admin($id, $username, $email, $role) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as &amp;$user) {
+        if ($user[&#039;id&#039;] == $id) {
+            $user[&#039;username&#039;] = $username;
+            $user[&#039;email&#039;] = $email;
+            $user[&#039;role&#039;] = $role;
+            file_put_contents(USERS_FILE, json_encode($users));
+            return true;
+        }
+    }
+    return false;
+}
+
+function delete_user($id) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as $key =&gt; $user) {
+        if ($user[&#039;id&#039;] == $id) {
+            unset($users[$key]);
+            file_put_contents(USERS_FILE, json_encode(array_values($users)));
+            return true;
+        }
+    }
+    return false;
+}
+
+function validate_input($data) {
+    return htmlspecialchars(trim($data), ENT_QUOTES, &#039;UTF-8&#039;);
+}
+
+function validate_email($email) {
+    return filter_var($email, FILTER_VALIDATE_EMAIL);
+}
+
+function number_to_words($num) {
+    $units = [&#039;zéro&#039;, &#039;un&#039;, &#039;deux&#039;, &#039;trois&#039;, &#039;quatre&#039;, &#039;cinq&#039;, &#039;six&#039;, &#039;sept&#039;, &#039;huit&#039;, &#039;neuf&#039;, &#039;dix&#039;];
+    return $units[$num] ?? &#039;&#039;;
+}
+
+
+function add_comment($article_id, $user_id, $content) {
+    $comments = json_decode(file_get_contents(COMMENTS_FILE), true);
+    $id = empty($comments) ? 1 : end($comments)[&#039;id&#039;] + 1;
+    $date = date(&#039;Y-m-d H:i:s&#039;);
+
+    $comment = [
+        &#039;id&#039; =&gt; $id,
+        &#039;article_id&#039; =&gt; $article_id,
+        &#039;user_id&#039; =&gt; $user_id,
+        &#039;content&#039; =&gt; $content,
+        &#039;date&#039; =&gt; $date
+    ];
+
+    $comments[] = $comment;
+    file_put_contents(COMMENTS_FILE, json_encode($comments));
+    return true;
+}</td></tr>
+<tr><td>index.php</td><td>// public/index.php
+&lt;?php
+session_start();
+require_once &#039;config/config.php&#039;;
+require_once &#039;includes/functions.php&#039;;
+
+$articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Blog&lt;/title&gt;
+    &lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;css/style.css&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Welcome to the Blog&lt;/h1&gt;
+    &lt;?php if (isset($_SESSION[&#039;user&#039;])): ?&gt;
+    &lt;p&gt;Hello, &lt;?php echo htmlspecialchars($_SESSION[&#039;user&#039;][&#039;username&#039;]); ?&gt;! &lt;a href=&quot;logout.php&quot;&gt;Logout&lt;/a&gt;&lt;/p&gt;
+    &lt;?php else: ?&gt;
+    &lt;p&gt;&lt;a href=&quot;login.php&quot;&gt;Login&lt;/a&gt; | &lt;a href=&quot;register.php&quot;&gt;Register&lt;/a&gt;&lt;/p&gt;
+    &lt;?php endif; ?&gt;
+
+    &lt;h2&gt;Recent Articles&lt;/h2&gt;
+    &lt;?php foreach ($articles as $article): ?&gt;
+    &lt;?php if ($article[&#039;status&#039;] === &#039;published&#039;): ?&gt;
+    &lt;div class=&quot;article&quot;&gt;
+        &lt;h3&gt;&lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&lt;/a&gt;&lt;/h3&gt;
+        &lt;p&gt;&lt;?php echo htmlspecialchars($article[&#039;description&#039;]); ?&gt;&lt;/p&gt;
+        &lt;p&gt;Published on: &lt;?php echo htmlspecialchars($article[&#039;date_published&#039;]); ?&gt;&lt;/p&gt;
+        &lt;p&gt;&lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;Read more&lt;/a&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;?php endif; ?&gt;
+    &lt;?php endforeach; ?&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>install.php</td><td>&lt;?php
+require_once &#039;config/config.php&#039;;
+require_once &#039;includes/functions.php&#039;;
+
+// Vérifie si le répertoire data existe, sinon le crée
+$data_directory = dirname(USERS_FILE);
+if (!file_exists($data_directory)) {
+    mkdir($data_directory, 0777, true); // Crée le répertoire avec des permissions en écriture
+}
+
+if (file_exists(USERS_FILE) &amp;&amp; file_exists(ARTICLES_FILE)) {
+    header(&#039;Location: public/index.php&#039;);
+    exit();
+}
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $username = validate_input($_POST[&#039;username&#039;]);
+    $email = validate_email($_POST[&#039;email&#039;]) ? $_POST[&#039;email&#039;] : &#039;&#039;;
+    $password = validate_input($_POST[&#039;password&#039;]);
+    $confirm_password = validate_input($_POST[&#039;confirm_password&#039;]);
+
+    if ($password === $confirm_password &amp;&amp; strlen($password) &gt;= 8 &amp;&amp; preg_match(&#039;/[A-Z]/&#039;, $password) &amp;&amp; preg_match(&#039;/[0-9]/&#039;, $password) &amp;&amp; $email) {
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        $ip = $_SERVER[&#039;REMOTE_ADDR&#039;];
+
+        $user = [
+            &#039;id&#039; =&gt; 1,
+            &#039;id_uniq&#039; =&gt; bin2hex(random_bytes(16)),
+            &#039;username&#039; =&gt; $username,
+            &#039;email&#039; =&gt; $email,
+            &#039;password&#039; =&gt; $hash,
+            &#039;ip&#039; =&gt; $ip,
+            &#039;role&#039; =&gt; &#039;admin&#039;
+        ];
+
+        file_put_contents(USERS_FILE, json_encode([$user]));
+        file_put_contents(ARTICLES_FILE, json_encode([]));
+        
+        header(&#039;Location: public/login.php&#039;);
+        exit();
+    } else {
+        echo &quot;Password must be at least 8 characters long, include at least one uppercase letter and one number. Email must be valid.&quot;;
+    }
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Installation&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Installation&lt;/h1&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;install.php&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;username&quot; placeholder=&quot;Username&quot; required&gt;
+        &lt;input type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot;Email&quot; required&gt;
+        &lt;input type=&quot;password&quot; name=&quot;password&quot; placeholder=&quot;Password&quot; required&gt;
+        &lt;input type=&quot;password&quot; name=&quot;confirm_password&quot; placeholder=&quot;Confirm Password&quot; required&gt;
+        &lt;button type=&quot;submit&quot;&gt;Install&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>ban_user.php</td><td>// public/admin/ban_user.php
+&lt;?php
+session_start();
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+if (isset($_GET[&#039;id&#039;])) {
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+    foreach ($users as &amp;$user) {
+        if ($user[&#039;id&#039;] == $_GET[&#039;id&#039;]) {
+            $user[&#039;banned&#039;] = true;
+            file_put_contents(USERS_FILE, json_encode($users));
+            break;
+        }
+    }
+    header(&#039;Location: index.php&#039;);
+    exit();
+} else {
+    echo &quot;No user ID provided.&quot;;
+}
+?&gt;
+</td></tr>
+<tr><td>create_article.php</td><td>
+&lt;?php
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $title = validate_input($_POST[&#039;title&#039;]);
+    $description = validate_input($_POST[&#039;description&#039;]);
+    $content = validate_input($_POST[&#039;content&#039;]);
+    $author_id = $_SESSION[&#039;user&#039;][&#039;username&#039;];
+
+    if (create_article($title, $description, $content, $author_id, &#039;published&#039;)) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Échec de la création de l&#039;article.&quot;;
+    }
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Create Article&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;nav&gt;
+    &lt;ul&gt;
+        &lt;li&gt;&lt;a href=&quot;index.php&quot;&gt;Dashboard&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;create_article.php&quot;&gt;Create Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_article.php&quot;&gt;Edit Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_user.php&quot;&gt;Edit User&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;validate_article.php&quot;&gt;Validate Article&lt;/a&gt;&lt;/li&gt;
+        &lt;!-- Ajoutez d&#039;autres liens vers les pages d&#039;administration si nécessaire --&gt;
+    &lt;/ul&gt;
+&lt;/nav&gt;
+    &lt;h1&gt;Create Article&lt;/h1&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;create_article.php&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;title&quot; placeholder=&quot;Title&quot; required&gt;
+        &lt;textarea name=&quot;description&quot; placeholder=&quot;Description&quot; required&gt;&lt;/textarea&gt;
+        &lt;textarea name=&quot;content&quot; placeholder=&quot;Content&quot; required&gt;&lt;/textarea&gt;
+        &lt;button type=&quot;submit&quot;&gt;Create&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>delete_article.php</td><td>&lt;?php
+session_start();
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+if (isset($_GET[&#039;id&#039;])) {
+    if (delete_article($_GET[&#039;id&#039;])) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Failed to delete article.&quot;;
+    }
+} else {
+    echo &quot;No article ID provided.&quot;;
+}
+?&gt;
+</td></tr>
+<tr><td>delete_user.php</td><td>&lt;?php
+session_start();
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+if (isset($_GET[&#039;id&#039;])) {
+    if (delete_user($_GET[&#039;id&#039;])) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Failed to delete user.&quot;;
+    }
+} else {
+    echo &quot;No user ID provided.&quot;;
+}
+?&gt;
+</td></tr>
+<tr><td>edit_article.php</td><td>&lt;?php
+
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+$article = get_article($_GET[&#039;id&#039;]);
+if (!$article) {
+    echo &quot;Article not found.&quot;;
+    exit();
+}
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $title = $_POST[&#039;title&#039;];
+    $content = $_POST[&#039;content&#039;];
+    if (update_article($article[&#039;id&#039;], $title, $content)) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Failed to update article.&quot;;
+    }
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Edit Article&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+   &lt;nav&gt; &lt;ul&gt;
+        &lt;li&gt;&lt;a href=&quot;index.php&quot;&gt;Dashboard&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;create_article.php&quot;&gt;Create Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_article.php&quot;&gt;Edit Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_user.php&quot;&gt;Edit User&lt;/a&gt;&lt;/li&gt;
+
+        &lt;!-- Ajoutez d&#039;autres liens vers les pages d&#039;administration si nécessaire --&gt;
+    &lt;/ul&gt;&lt;/nav&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;edit_article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;title&quot; value=&quot;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&quot; required&gt;
+        &lt;textarea name=&quot;content&quot; required&gt;&lt;?php echo htmlspecialchars($article[&#039;content&#039;]); ?&gt;&lt;/textarea&gt;
+        &lt;button type=&quot;submit&quot;&gt;Update&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>edit_user.php</td><td>&lt;?php
+
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+$user = get_user($_GET[&#039;id&#039;]);
+if (!$user) {
+    echo &quot;User not found.&quot;;
+    exit();
+}
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $username = $_POST[&#039;username&#039;];
+    $email = $_POST[&#039;email&#039;];
+    $role = $_POST[&#039;role&#039;];
+    if (update_user_admin($user[&#039;id&#039;], $username, $email, $role)) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Failed to update user.&quot;;
+    }
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Edit User&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+   &lt;nav&gt; &lt;ul&gt;
+        &lt;li&gt;&lt;a href=&quot;index.php&quot;&gt;Dashboard&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;create_article.php&quot;&gt;Create Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_article.php&quot;&gt;Edit Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_user.php&quot;&gt;Edit User&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;validate_article.php&quot;&gt;Validate Article&lt;/a&gt;&lt;/li&gt;
+        &lt;!-- Ajoutez d&#039;autres liens vers les pages d&#039;administration si nécessaire --&gt;
+    &lt;/ul&gt;&lt;/nav&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;edit_user.php?id=&lt;?php echo $user[&#039;id&#039;]; ?&gt;&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;username&quot; value=&quot;&lt;?php echo htmlspecialchars($user[&#039;username&#039;]); ?&gt;&quot; required&gt;
+        &lt;input type=&quot;email&quot; name=&quot;email&quot; value=&quot;&lt;?php echo htmlspecialchars($user[&#039;email&#039;]); ?&gt;&quot; required&gt;
+        &lt;select name=&quot;role&quot;&gt;
+            &lt;option value=&quot;user&quot; &lt;?php echo $user[&#039;role&#039;] === &#039;user&#039; ? &#039;selected&#039; : &#039;&#039;; ?&gt;&gt;User&lt;/option&gt;
+            &lt;option value=&quot;admin&quot; &lt;?php echo $user[&#039;role&#039;] === &#039;admin&#039; ? &#039;selected&#039; : &#039;&#039;; ?&gt;&gt;Admin&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;button type=&quot;submit&quot;&gt;Update&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>index.php</td><td>&lt;?php
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+$users = json_decode(file_get_contents(USERS_FILE), true);
+$articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Admin Panel&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+    &lt;nav&gt;
+    &lt;ul&gt;
+        &lt;li&gt;&lt;a href=&quot;index.php&quot;&gt;Dashboard&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;create_article.php&quot;&gt;Create Article&lt;/a&gt;&lt;/li&gt;
+
+        &lt;li&gt;&lt;a href=&quot;edit_article.php&quot;&gt;Edit Article&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;edit_user.php&quot;&gt;Edit User&lt;/a&gt;&lt;/li&gt;
+
+
+        &lt;!-- Ajoutez d&#039;autres liens vers les pages d&#039;administration si nécessaire --&gt;
+    &lt;/ul&gt;
+&lt;/nav&gt;
+    &lt;h1&gt;Admin Panel&lt;/h1&gt;
+    &lt;h2&gt;Users&lt;/h2&gt;
+    &lt;table&gt;
+        &lt;tr&gt;
+            &lt;th&gt;ID&lt;/th&gt;
+            &lt;th&gt;Username&lt;/th&gt;
+            &lt;th&gt;Email&lt;/th&gt;
+            &lt;th&gt;Actions&lt;/th&gt;
+        &lt;/tr&gt;
+        &lt;?php foreach ($users as $user): ?&gt;
+        &lt;tr&gt;
+            &lt;td&gt;&lt;?php echo htmlspecialchars($user[&#039;id&#039;]); ?&gt;&lt;/td&gt;
+            &lt;td&gt;&lt;?php echo htmlspecialchars($user[&#039;username&#039;]); ?&gt;&lt;/td&gt;
+            &lt;td&gt;&lt;?php echo htmlspecialchars($user[&#039;email&#039;]); ?&gt;&lt;/td&gt;
+            &lt;td&gt;
+                &lt;a href=&quot;edit_user.php?id=&lt;?php echo $user[&#039;id&#039;]; ?&gt;&quot;&gt;Edit&lt;/a&gt;
+                &lt;a href=&quot;delete_user.php?id=&lt;?php echo $user[&#039;id&#039;]; ?&gt;&quot; onclick=&quot;return confirm(&#039;Are you sure?&#039;);&quot;&gt;Delete&lt;/a&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;?php endforeach; ?&gt;
+    &lt;/table&gt;
+
+    &lt;h2&gt;Articles&lt;/h2&gt;
+    &lt;a href=&quot;create_article.php&quot;&gt;Create New Article&lt;/a&gt;
+    &lt;table&gt;
+        &lt;tr&gt;
+            &lt;th&gt;ID&lt;/th&gt;
+            &lt;th&gt;Title&lt;/th&gt;
+            &lt;th&gt;Status&lt;/th&gt;
+            &lt;th&gt;Actions&lt;/th&gt;
+        &lt;/tr&gt;
+        &lt;?php foreach ($articles as $article): ?&gt;
+        &lt;tr&gt;
+            &lt;td&gt;&lt;?php echo htmlspecialchars($article[&#039;id&#039;]); ?&gt;&lt;/td&gt;
+            &lt;td&gt;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&lt;/td&gt;
+            &lt;td&gt;&lt;?php echo htmlspecialchars($article[&#039;status&#039;]); ?&gt;&lt;/td&gt;
+            &lt;td&gt;
+                &lt;a href=&quot;edit_article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;Edit&lt;/a&gt;
+                &lt;a href=&quot;delete_article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot; onclick=&quot;return confirm(&#039;Are you sure?&#039;);&quot;&gt;Delete&lt;/a&gt;
+                &lt;a href=&quot;validate_article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;Validate&lt;/a&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;?php endforeach; ?&gt;
+
+&lt;?php foreach ($articles as $article): ?&gt;
+    &lt;?php if ($article[&#039;status&#039;] === &#039;toValidate&#039;): ?&gt;
+        &lt;div class=&quot;article&quot;&gt;
+            &lt;h3&gt;&lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&lt;/a&gt;&lt;/h3&gt;
+            &lt;p&gt;&lt;?php echo htmlspecialchars($article[&#039;description&#039;]); ?&gt;&lt;/p&gt;
+            &lt;p&gt;Published on: &lt;?php //echo htmlspecialchars($article[&#039;date_published&#039;]); ?&gt;&lt;/p&gt;
+            &lt;p&gt;&lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;Read more&lt;/a&gt;&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;?php endif; ?&gt;
+&lt;?php endforeach; ?&gt;
+
+
+
+    &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>validate_article.php</td><td>&lt;?php
+
+/*require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+if (isset($_GET[&#039;id&#039;])) {
+    if (update_article($_GET[&#039;id&#039;], $title, $description, $content, $status = &#039;published&#039;)) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Failed to validate article.&quot;;
+    }
+} else {
+    echo &quot;No article ID provided.&quot;;
+}*/
+
+require_once &#039;../../config/config.php&#039;;
+require_once &#039;../../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;]) || $_SESSION[&#039;user&#039;][&#039;role&#039;] !== &#039;admin&#039;) {
+    header(&#039;Location: ../login.php&#039;);
+    exit();
+}
+
+if (isset($_GET[&#039;id&#039;])) {
+    $articleId = $_GET[&#039;id&#039;];
+    
+    // Charger tous les articles
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+
+    // Trouver l&#039;article avec l&#039;ID donné
+    foreach ($articles as &amp;$article) {
+        if ($article[&#039;id&#039;] == $articleId) {
+            // Mettre à jour uniquement le statut de l&#039;article
+            $article[&#039;status&#039;] = &#039;published&#039;;
+            break;
+        }
+    }
+    
+    // Sauvegarder les articles mis à jour
+    file_put_contents(ARTICLES_FILE, json_encode($articles));
+    
+    header(&#039;Location: index.php&#039;);
+    exit();
+} else {
+    echo &quot;No article ID provided.&quot;;
+}
+
+
+
+?&gt;
+</td></tr>
+<tr><td>article.php</td><td>
+&lt;?php
+
+require_once &#039;../config/config.php&#039;;
+require_once &#039;../includes/functions.php&#039;;
+
+if (isset($_GET[&#039;id&#039;])) {
+    $articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+    foreach ($articles as $article) {
+        if ($article[&#039;id&#039;] == $_GET[&#039;id&#039;]) {
+            $current_article = $article;
+            break;
+        }
+    }
+    if (!isset($current_article)) {
+        echo &quot;Article not found.&quot;;
+        exit();
+    }
+
+    //$comments = json_decode(file_get_contents(COMMENTS_FILE), true);
+   // $article_comments = array_filter($comments, function($comment) use ($current_article) {
+        //return $comment[&#039;article_id&#039;] == $current_article[&#039;id&#039;];
+   // });
+} else {
+    echo &quot;No article ID provided.&quot;;
+    exit();
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;&lt;?php echo htmlspecialchars($current_article[&#039;title&#039;]); ?&gt;&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;&lt;?php echo htmlspecialchars($current_article[&#039;title&#039;]); ?&gt;&lt;/h1&gt;
+    &lt;p&gt;&lt;?php echo htmlspecialchars($current_article[&#039;description&#039;]); ?&gt;&lt;/p&gt;
+    &lt;p&gt;&lt;?php echo htmlspecialchars($current_article[&#039;content&#039;]); ?&gt;&lt;/p&gt;
+    &lt;p&gt;Published on: &lt;?php echo htmlspecialchars($current_article[&#039;date_published&#039;]); ?&gt;&lt;/p&gt;
+    &lt;p&gt;Last modified on: &lt;?php /* echo htmlspecialchars($current_article[&#039;last_modified&#039;]);*/ ?&gt;&lt;/p&gt;
+
+    &lt;h2&gt;Comments&lt;/h2&gt;
+    &lt;?php //foreach ($article_comments as $comment): ?&gt;
+    &lt;div&gt;
+        &lt;p&gt;&lt;?php //echo htmlspecialchars($comment[&#039;content&#039;]); ?&gt;&lt;/p&gt;
+        &lt;p&gt;By User ID: &lt;?php //echo htmlspecialchars($comment[&#039;user_id&#039;]); ?&gt; on &lt;?php //echo htmlspecialchars($comment[&#039;date&#039;]); ?&gt;&lt;/p&gt;
+        &lt;?php //if (isset($_SESSION[&#039;user&#039;]) &amp;&amp; $_SESSION[&#039;user&#039;][&#039;role&#039;] === &#039;admin&#039;): ?&gt;
+        &lt;a href=&quot;delete_comment.php?id=&lt;?php //echo $comment[&#039;id&#039;]; ?&gt;&quot;&gt;Delete&lt;/a&gt;
+        &lt;?php //endif; ?&gt;
+    &lt;/div&gt;
+    &lt;?php //endforeach; ?&gt;
+
+    &lt;?php if (isset($_SESSION[&#039;user&#039;])): ?&gt;
+    &lt;h3&gt;Add a Comment&lt;/h3&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;add_comment.php&quot;&gt;
+        &lt;input type=&quot;hidden&quot; name=&quot;article_id&quot; value=&quot;&lt;?php echo $current_article[&#039;id&#039;]; ?&gt;&quot;&gt;
+        &lt;textarea name=&quot;content&quot; placeholder=&quot;Comment&quot; required&gt;&lt;/textarea&gt;
+        &lt;button type=&quot;submit&quot;&gt;Add Comment&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;?php endif; ?&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>index.php</td><td>&lt;?php
+require_once &#039;../config/config.php&#039;;
+require_once &#039;../includes/functions.php&#039;;
+
+if (!file_exists(USERS_FILE) || !file_exists(ARTICLES_FILE)) {
+    header(&#039;Location: ../install.php&#039;);
+    exit();
+}
+
+$title = &#039;Home&#039;;
+include &#039;../templates/header.php&#039;;
+
+$articles = json_decode(file_get_contents(ARTICLES_FILE), true);
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Home&lt;/title&gt;
+    &lt;!-- Mettez ici les balises meta, les liens de styles ou autres éléments d&#039;en-tête communs à toutes vos pages --&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;?php if (isset($_SESSION[&#039;user&#039;])): ?&gt;
+    &lt;h1&gt;Welcome, &lt;?php echo htmlspecialchars($_SESSION[&#039;user&#039;][&#039;username&#039;]); ?&gt;!&lt;/h1&gt;
+    &lt;?php if ($_SESSION[&#039;user&#039;][&#039;role&#039;] === &#039;admin&#039;): ?&gt;
+    &lt;a href=&#039;admin/index.php&#039;&gt;Admin Panel&lt;/a&gt;
+    &lt;?php endif; ?&gt;
+    &lt;a href=&#039;propose_article.php&#039;&gt;Propose an Article&lt;/a&gt;
+    &lt;?php else: ?&gt;
+    &lt;h1&gt;Welcome to our CMS!&lt;/h1&gt;
+    &lt;a href=&#039;login.php&#039;&gt;Login&lt;/a&gt; | &lt;a href=&#039;register.php&#039;&gt;Register&lt;/a&gt;
+    &lt;?php endif; ?&gt;
+
+    &lt;h2&gt;Recent Articles&lt;/h2&gt;
+    &lt;?php foreach ($articles as $article): ?&gt;
+    &lt;?php if ($article[&#039;status&#039;] === &#039;published&#039;): ?&gt;
+    &lt;div class=&quot;article&quot;&gt;
+        &lt;h3&gt;&lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;&lt;?php echo htmlspecialchars($article[&#039;title&#039;]); ?&gt;&lt;/a&gt;&lt;/h3&gt;
+        &lt;p&gt;&lt;?php echo htmlspecialchars($article[&#039;description&#039;]); ?&gt;&lt;/p&gt;
+        &lt;p&gt;Published on: &lt;?php echo htmlspecialchars($article[&#039;date_published&#039;]); ?&gt;&lt;/p&gt;
+        &lt;p&gt;&lt;a href=&quot;article.php?id=&lt;?php echo $article[&#039;id&#039;]; ?&gt;&quot;&gt;Read more&lt;/a&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;?php endif; ?&gt;
+    &lt;?php endforeach; ?&gt;
+
+    &lt;?php include &#039;../templates/footer.php&#039;; ?&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>login.php</td><td>&lt;?php
+require_once &#039;../config/config.php&#039;;
+require_once &#039;../includes/functions.php&#039;;
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $username = validate_input($_POST[&#039;username&#039;]);
+    $password = validate_input($_POST[&#039;password&#039;]);
+
+    $users = json_decode(file_get_contents(USERS_FILE), true);
+
+    foreach ($users as $user) {
+        if ($user[&#039;username&#039;] === $username &amp;&amp; password_verify($password, $user[&#039;password&#039;])) {
+            $_SESSION[&#039;user&#039;] = $user;
+            header(&#039;Location: index.php&#039;);
+            exit();
+        }
+    }
+    echo &quot;Invalid credentials.&quot;;
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Login&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Login&lt;/h1&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;login.php&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;username&quot; placeholder=&quot;Username&quot; required&gt;
+        &lt;input type=&quot;password&quot; name=&quot;password&quot; placeholder=&quot;Password&quot; required&gt;
+        &lt;button type=&quot;submit&quot;&gt;Login&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>logout.php</td><td>&lt;?php
+session_start();
+session_destroy();
+header(&#039;Location: index.php&#039;);
+exit();
+?&gt;
+</td></tr>
+<tr><td>propose_article.php</td><td>&lt;?php
+
+require_once &#039;../config/config.php&#039;;
+require_once &#039;../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;])) {
+    header(&#039;Location: login.php&#039;);
+    exit();
+}
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $title = validate_input($_POST[&#039;title&#039;]);
+    $description = validate_input($_POST[&#039;description&#039;]);
+    $content = validate_input($_POST[&#039;content&#039;]);
+    $author_id = $_SESSION[&#039;user&#039;][&#039;username&#039;];
+
+    if (create_article($title, $description, $content, $author_id, &#039;toValidate&#039;)) {
+        header(&#039;Location: index.php&#039;);
+        exit();
+    } else {
+        echo &quot;Échec de la création de l&#039;article.&quot;;
+    }
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Propose Article&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Propose Article&lt;/h1&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;propose_article.php&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;title&quot; placeholder=&quot;Title&quot; required&gt;
+        &lt;textarea name=&quot;description&quot; placeholder=&quot;Description&quot; required&gt;&lt;/textarea&gt;
+        &lt;textarea name=&quot;content&quot; placeholder=&quot;Content&quot; required&gt;&lt;/textarea&gt;
+        &lt;button type=&quot;submit&quot;&gt;Propose&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>register.php</td><td>&lt;?php
+
+require_once &#039;../config/config.php&#039;;
+require_once &#039;../includes/functions.php&#039;;
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039;) {
+    $username = validate_input($_POST[&#039;username&#039;]);
+    $email = validate_email($_POST[&#039;email&#039;]) ? $_POST[&#039;email&#039;] : &#039;&#039;;
+    $password = validate_input($_POST[&#039;password&#039;]);
+    $confirm_password = validate_input($_POST[&#039;confirm_password&#039;]);
+    $captcha = validate_input($_POST[&#039;captcha&#039;]);
+    $correct_answer = $_SESSION[&#039;captcha&#039;];
+
+    if ($password === $confirm_password &amp;&amp; strlen($password) &gt;= 8 &amp;&amp; preg_match(&#039;/[A-Z]/&#039;, $password) &amp;&amp; preg_match(&#039;/[0-9]/&#039;, $password) &amp;&amp; $email &amp;&amp; strtolower($captcha) == $correct_answer) {
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        $ip = $_SERVER[&#039;REMOTE_ADDR&#039;];
+
+        $users = json_decode(file_get_contents(USERS_FILE), true);
+        $id = empty($users) ? 1 : end($users)[&#039;id&#039;] + 1;
+        $user = [
+            &#039;id&#039; =&gt; $id,
+            &#039;id_uniq&#039; =&gt; bin2hex(random_bytes(16)),
+            &#039;username&#039; =&gt; $username,
+            &#039;email&#039; =&gt; $email,
+            &#039;password&#039; =&gt; $hash,
+            &#039;ip&#039; =&gt; $ip,
+            &#039;role&#039; =&gt; &#039;user&#039;
+        ];
+
+        $users[] = $user;
+        file_put_contents(USERS_FILE, json_encode($users));
+
+        header(&#039;Location: login.php&#039;);
+        exit();
+    } else {
+        echo &quot;Password must be at least 8 characters long, include at least one uppercase letter and one number. Email must be valid. Captcha must be correct.&quot;;
+    }
+}
+
+$number1 = rand(1, 10);
+$number2 = rand(1, 10);
+$operation = rand(0, 1) ? &#039;+&#039; : &#039;-&#039;;
+$correct_answer = $operation === &#039;+&#039; ? $number_to_words($number1 + $number2) : $number_to_words($number1 - $number2);
+$_SESSION[&#039;captcha&#039;] = $correct_answer;
+
+function number_to_words($num) {
+    $units = [&#039;zero&#039;, &#039;one&#039;, &#039;two&#039;, &#039;three&#039;, &#039;four&#039;, &#039;five&#039;, &#039;six&#039;, &#039;seven&#039;, &#039;eight&#039;, &#039;nine&#039;, &#039;ten&#039;];
+    return $units[$num] ?? &#039;&#039;;
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Register&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Register&lt;/h1&gt;
+    &lt;form method=&quot;POST&quot; action=&quot;register.php&quot;&gt;
+        &lt;input type=&quot;text&quot; name=&quot;username&quot; placeholder=&quot;Username&quot; required&gt;
+        &lt;input type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot;Email&quot; required&gt;
+        &lt;input type=&quot;password&quot; name=&quot;password&quot; placeholder=&quot;Password&quot; required&gt;
+        &lt;input type=&quot;password&quot; name=&quot;confirm_password&quot; placeholder=&quot;Confirm Password&quot; required&gt;
+        &lt;label for=&quot;captcha&quot;&gt;&lt;?php echo &quot;$number1 $operation $number2 = ? (in words)&quot;; ?&gt;&lt;/label&gt;
+        &lt;input type=&quot;text&quot; name=&quot;captcha&quot; placeholder=&quot;Captcha&quot; required&gt;
+        &lt;button type=&quot;submit&quot;&gt;Register&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>upload_avatar.php</td><td>
+&lt;?php
+
+require_once &#039;../config/config.php&#039;;
+require_once &#039;../includes/functions.php&#039;;
+
+if (!isset($_SESSION[&#039;user&#039;])) {
+    header(&#039;Location: login.php&#039;);
+    exit();
+}
+
+if ($_SERVER[&#039;REQUEST_METHOD&#039;] == &#039;POST&#039; &amp;&amp; isset($_FILES[&#039;avatar&#039;])) {
+    $avatar = $_FILES[&#039;avatar&#039;];
+    $target_dir = &quot;../avatars/&quot;;
+    $target_file = $target_dir . basename($avatar[&quot;name&quot;]);
+    $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+
+    $check = getimagesize($avatar[&quot;tmp_name&quot;]);
+    if ($check !== false &amp;&amp; $avatar[&quot;size&quot;] &lt;= 500000 &amp;&amp; in_array($imageFileType, [&quot;jpg&quot;, &quot;jpeg&quot;, &quot;png&quot;, &quot;gif&quot;])) {
+        if (move_uploaded_file($avatar[&quot;tmp_name&quot;], $target_file)) {
+            $users = json_decode(file_get_contents(USERS_FILE), true);
+            foreach ($users as &amp;$user) {
+                if ($user[&#039;id&#039;] == $_SESSION[&#039;user&#039;][&#039;id&#039;]) {
+                    $user[&#039;avatar&#039;] = $target_file;
+                    file_put_contents(USERS_FILE, json_encode($users));
+                    $_SESSION[&#039;user&#039;][&#039;avatar&#039;] = $target_file;
+                    break;
+                }
+            }
+            header(&#039;Location: profile.php&#039;);
+            exit();
+        } else {
+            echo &quot;Sorry, there was an error uploading your file.&quot;;
+        }
+    } else {
+        echo &quot;File is not an image or is too large.&quot;;
+    }
+}
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Upload Avatar&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Upload Avatar&lt;/h1&gt;
+    &lt;form method=&quot;POST&quot; enctype=&quot;multipart/form-data&quot; action=&quot;upload_avatar.php&quot;&gt;
+        &lt;input type=&quot;file&quot; name=&quot;avatar&quot; required&gt;
+        &lt;button type=&quot;submit&quot;&gt;Upload&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>footer.php</td><td>    &lt;/main&gt;
+    &lt;footer&gt;
+        &lt;p&gt;&amp;copy; 2024 My CMS&lt;/p&gt;
+    &lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</td></tr>
+<tr><td>header.php</td><td>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;&lt;?php echo htmlspecialchars($title); ?&gt;&lt;/title&gt;
+    &lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;css/style.css&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header&gt;
+        &lt;h1&gt;Welcome to our CMS&lt;/h1&gt;
+        &lt;nav&gt;
+            &lt;a href=&quot;index.php&quot;&gt;Home&lt;/a&gt;
+            &lt;a href=&quot;login.php&quot;&gt;Login&lt;/a&gt;
+            &lt;a href=&quot;register.php&quot;&gt;Register&lt;/a&gt;
+            &lt;a href=&quot;profile.php&quot;&gt;Profile&lt;/a&gt;
+            &lt;a href=&quot;logout.php&quot;&gt;Logout&lt;/a&gt;
+        &lt;/nav&gt;
+    &lt;/header&gt;
+    &lt;main&gt;
+</td></tr>
+</table>
